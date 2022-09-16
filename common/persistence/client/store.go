@@ -25,6 +25,7 @@
 package client
 
 import (
+	"fmt"
 	"go.temporal.io/server/common/config"
 	"go.temporal.io/server/common/log"
 	"go.temporal.io/server/common/metrics"
@@ -83,6 +84,12 @@ func DataStoreFactoryProvider(
 	case defaultCfg.SQL != nil:
 		dataStoreFactory = sql.NewFactory(*defaultCfg.SQL, r, string(clusterName), logger)
 	case defaultCfg.CustomDataStoreConfig != nil:
+		logger.Info(fmt.Sprintf("abstractDataStoreFactory: %v", abstractDataStoreFactory))
+		logger.Info(fmt.Sprintf("defaultCfg: %v", defaultCfg))
+		logger.Info(fmt.Sprintf("defaultCfg.CustomDataStoreConfig: %v", defaultCfg.CustomDataStoreConfig))
+		logger.Info(fmt.Sprintf("clusterName: %v", clusterName))
+		logger.Info(fmt.Sprintf("logger: %v", logger))
+		logger.Info(fmt.Sprintf("metricsClient: %v", metricsClient))
 		dataStoreFactory = abstractDataStoreFactory.NewFactory(*defaultCfg.CustomDataStoreConfig, r, string(clusterName), logger, metricsClient)
 	default:
 		logger.Fatal("invalid config: one of cassandra or sql params must be specified for default data store")
