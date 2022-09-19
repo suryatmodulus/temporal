@@ -259,6 +259,7 @@ func (s *Scavenger) handleTask(
 			RunId:      task.runID,
 		},
 	})
+	s.logger.Info(fmt.Sprintf("ZZZ - HANDLE - %v - %v - %v - %v", task.namespaceID, task.workflowID, task.runID, err))
 	switch err.(type) {
 	case nil:
 		return nil
