@@ -216,7 +216,7 @@ func (s *Scavenger) filterTask(
 
 	if time.Now().UTC().Add(-s.historyDataMinAge()).Before(timestamp.TimeValue(branch.ForkTime)) {
 		s.metrics.IncCounter(metrics.HistoryScavengerScope, metrics.HistoryScavengerSkipCount)
-		s.logger.Info(fmt.Sprintf("ZZZ - SKIP - %v", branch.Info))
+		s.logger.Info(fmt.Sprintf("ZZZ - SKIP - %v - %v - (%v) - %v", branch.Info, time.Now().UTC(), s.historyDataMinAge(), branch.ForkTime))
 
 		s.Lock()
 		defer s.Unlock()
