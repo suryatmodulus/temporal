@@ -26,6 +26,7 @@ package history
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -215,6 +216,7 @@ func (s *Scavenger) filterTask(
 
 	if time.Now().UTC().Add(-s.historyDataMinAge()).Before(timestamp.TimeValue(branch.ForkTime)) {
 		s.metrics.IncCounter(metrics.HistoryScavengerScope, metrics.HistoryScavengerSkipCount)
+		s.logger.Info(fmt.Sprintf("ZZZ - SKIP - %v", branch.Info))
 
 		s.Lock()
 		defer s.Unlock()
@@ -233,6 +235,7 @@ func (s *Scavenger) filterTask(
 		return nil
 	}
 	shardID := common.WorkflowIDToHistoryShard(namespaceID, workflowID, s.numShards)
+	s.logger.Info(fmt.Sprintf("ZZZ - FOUND - %v", branch.Info))
 
 	return &taskDetail{
 		shardID:     shardID,
