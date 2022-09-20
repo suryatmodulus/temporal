@@ -426,10 +426,12 @@ func (e *MutableStateImpl) SetHistoryTree(
 	treeID string,
 ) error {
 
+	e.logger.Info(fmt.Sprintf("TTT - %v + %v", e.executionInfo.WorkflowRunExpirationTime, e.namespaceEntry.Retention()))
 	initialBranch, err := e.shard.GetExecutionManager().NewHistoryBranch(
 		ctx,
 		&persistence.NewHistoryBranchRequest{
 			TreeID: treeID,
+			// Expiry: e.executionInfo.WorkflowRunExpirationTime + e.namespaceEntry.Retention()
 		},
 	)
 	if err != nil {

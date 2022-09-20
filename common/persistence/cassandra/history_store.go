@@ -359,6 +359,7 @@ func (h *HistoryStore) deleteBranchRangeNodes(
 	beginNodeID int64,
 ) {
 
+	h.Logger.Info(fmt.Sprintf("DDD - %v - %v - %v", treeID, branchID, beginNodeID))
 	batch.Query(v2templateRangeDeleteHistoryNode,
 		treeID,
 		branchID,
