@@ -28,6 +28,7 @@ package workflow
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	commonpb "go.temporal.io/api/common/v1"
@@ -240,8 +241,10 @@ func (m *DeleteManagerImpl) deleteWorkflowExecutionInternal(
 	scope metrics.Scope,
 ) error {
 
+	m.shard.GetLogger().Info(fmt.Sprintf("PPP - %v - %v - %v", weCtx.GetNamespaceID(), weCtx.GetWorkflowID(), weCtx.GetRunID()))
 	currentBranchToken, err := ms.GetCurrentBranchToken()
 	if err != nil {
+		m.shard.GetLogger().Error(fmt.Sprintf("PPP - %v - %v - %v - %v", weCtx.GetNamespaceID(), weCtx.GetWorkflowID(), weCtx.GetRunID(), err))
 		return err
 	}
 
@@ -257,6 +260,7 @@ func (m *DeleteManagerImpl) deleteWorkflowExecutionInternal(
 	} else {
 		closeTime, err = ms.GetWorkflowCloseTime(ctx)
 		if err != nil {
+			m.shard.GetLogger().Error(fmt.Sprintf("PPP - %v - %v - %v - %v", weCtx.GetNamespaceID(), weCtx.GetWorkflowID(), weCtx.GetRunID(), err))
 			return err
 		}
 	}
@@ -267,6 +271,7 @@ func (m *DeleteManagerImpl) deleteWorkflowExecutionInternal(
 	if archiveIfEnabled {
 		deletionPromised, err := m.archiveWorkflowIfEnabled(ctx, namespaceID, we, currentBranchToken, weCtx, ms, scope)
 		if err != nil {
+			m.shard.GetLogger().Error(fmt.Sprintf("PPP - %v - %v - %v - %v", weCtx.GetNamespaceID(), weCtx.GetWorkflowID(), weCtx.GetRunID(), err))
 			return err
 		}
 		if deletionPromised {
@@ -277,6 +282,7 @@ func (m *DeleteManagerImpl) deleteWorkflowExecutionInternal(
 			// HOWEVER, when rolling out this change, we don't know if worker is running an old version of the
 			// archival workflow (before 1.17.3), which will only delete workflow history. To prevent this from
 			// happening, worker role must be deployed first.
+			m.shard.GetLogger().Error(fmt.Sprintf("PPP - %v - %v - %v - %v", weCtx.GetNamespaceID(), weCtx.GetWorkflowID(), weCtx.GetRunID(), err))
 			return nil
 		}
 	}
@@ -293,6 +299,7 @@ func (m *DeleteManagerImpl) deleteWorkflowExecutionInternal(
 		closeTime,
 		ms.GetExecutionInfo().GetCloseVisibilityTaskId(),
 	); err != nil {
+		m.shard.GetLogger().Error(fmt.Sprintf("PPP - %v - %v - %v - %v", weCtx.GetNamespaceID(), weCtx.GetWorkflowID(), weCtx.GetRunID(), err))
 		return err
 	}
 

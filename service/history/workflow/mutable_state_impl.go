@@ -426,12 +426,26 @@ func (e *MutableStateImpl) SetHistoryTree(
 	treeID string,
 ) error {
 
-	e.logger.Info(fmt.Sprintf("TTT - %v + %v", e.executionInfo.WorkflowRunExpirationTime, e.namespaceEntry.Retention()))
+	// Figure out the optional maximum expiration hint if the namespace is configured with retention and either run
+	// timeout or execution timeout for the workflow is also configured.
+	var expiry *time.Duration
+	if retention := e.namespaceEntry.Retention(); retention > 0 {
+		// NOTE: run timeout takes precedence over execution timeout
+		if e.executionInfo.WorkflowRunTimeout != nil {
+			hint := *e.executionInfo.WorkflowRunTimeout + retention
+			expiry = &hint
+		} else if e.executionInfo.WorkflowExecutionTimeout != nil {
+			hint := *e.executionInfo.WorkflowExecutionTimeout + retention
+			expiry = &hint
+		}
+	}
+	e.logger.Info(fmt.Sprintf("TTT - %v | %v | %v [%v] => %v", e.executionInfo.WorkflowRunTimeout, e.executionInfo.WorkflowExecutionTimeout, e.namespaceEntry.Retention(), e.namespaceEntry.Name(), expiry))
+
 	initialBranch, err := e.shard.GetExecutionManager().NewHistoryBranch(
 		ctx,
 		&persistence.NewHistoryBranchRequest{
-			TreeID: treeID,
-			// Expiry: e.executionInfo.WorkflowRunExpirationTime + e.namespaceEntry.Retention()
+			TreeID:     treeID,
+			ExpiryHint: expiry,
 		},
 	)
 	if err != nil {
