@@ -216,7 +216,7 @@ func (s *Scavenger) filterTask(
 
 	if time.Now().UTC().Add(-s.historyDataMinAge()).Before(timestamp.TimeValue(branch.ForkTime)) {
 		s.metrics.IncCounter(metrics.HistoryScavengerScope, metrics.HistoryScavengerSkipCount)
-		s.logger.Info(fmt.Sprintf("ZZZ - SKIP - %v - %v - (%v) - %v", branch.Info, time.Now().UTC(), s.historyDataMinAge(), branch.ForkTime))
+		//s.logger.Info(fmt.Sprintf("ZZZ - SKIP - %v - %v - (%v) - %v", branch.Info, time.Now().UTC(), s.historyDataMinAge(), branch.ForkTime))
 
 		s.Lock()
 		defer s.Unlock()
@@ -235,7 +235,7 @@ func (s *Scavenger) filterTask(
 		return nil
 	}
 	shardID := common.WorkflowIDToHistoryShard(namespaceID, workflowID, s.numShards)
-	s.logger.Info(fmt.Sprintf("ZZZ - FOUND - %v", branch.Info))
+	//s.logger.Info(fmt.Sprintf("ZZZ - FOUND - %v", branch.Info))
 
 	return &taskDetail{
 		shardID:     shardID,
@@ -259,7 +259,7 @@ func (s *Scavenger) handleTask(
 			RunId:      task.runID,
 		},
 	})
-	s.logger.Info(fmt.Sprintf("ZZZ - HANDLE - %v - %v - %v - %v", task.namespaceID, task.workflowID, task.runID, err))
+	//s.logger.Info(fmt.Sprintf("ZZZ - HANDLE - %v - %v - %v - %v", task.namespaceID, task.workflowID, task.runID, err))
 	switch err.(type) {
 	case nil:
 		return nil
