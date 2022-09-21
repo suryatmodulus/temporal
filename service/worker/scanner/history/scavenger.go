@@ -26,7 +26,6 @@ package history
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
