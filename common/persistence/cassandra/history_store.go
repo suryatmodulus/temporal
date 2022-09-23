@@ -26,6 +26,7 @@ package cassandra
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	commonpb "go.temporal.io/api/common/v1"
@@ -342,6 +343,7 @@ func (h *HistoryStore) DeleteHistoryBranch(
 
 	// delete each branch range
 	for _, br := range request.BranchRanges {
+		h.Logger.Info(fmt.Sprintf("DDD - %v - %v", request.TreeId, hex.EncodeToString(request.BranchToken)))
 		h.deleteBranchRangeNodes(batch, request.TreeId, br.BranchId, br.BeginNodeId)
 	}
 
@@ -359,7 +361,6 @@ func (h *HistoryStore) deleteBranchRangeNodes(
 	beginNodeID int64,
 ) {
 
-	h.Logger.Info(fmt.Sprintf("DDD - %v - %v - %v", treeID, branchID, beginNodeID))
 	batch.Query(v2templateRangeDeleteHistoryNode,
 		treeID,
 		branchID,

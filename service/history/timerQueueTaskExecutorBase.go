@@ -27,6 +27,7 @@ package history
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	commonpb "go.temporal.io/api/common/v1"
@@ -122,7 +123,7 @@ func (t *timerQueueTaskExecutorBase) executeDeleteHistoryEventTask(
 		// the mutable state is deleted and delete history branch operation failed.
 		// use task branch token to delete the leftover history branch
 		t.logger.Error(fmt.Sprintf("RRR 3 - %v - %v", task.WorkflowID, task.RunID))
-		return t.deleteHistoryBranch(ctx, task.BranchToken)
+		return t.deleteHistoryBranch(ctx, task.BranchToken) /// <---------------
 	default:
 		return err
 	}
@@ -141,7 +142,7 @@ func (t *timerQueueTaskExecutorBase) executeDeleteHistoryEventTask(
 		return err
 	}
 	if ok := VerifyTaskVersion(t.shard, t.logger, mutableState.GetNamespaceEntry(), lastWriteVersion, task.Version, task); !ok {
-		currentBranchToken, err := mutableState.GetCurrentBranchToken()
+		currentBranchToken, err := mutableState.GetCurrentBranchToken() /// <------------------
 		if err != nil {
 			t.logger.Error(fmt.Sprintf("RRR 6 - %v - %v - %v", task.WorkflowID, task.RunID, err))
 			return err
@@ -150,20 +151,27 @@ func (t *timerQueueTaskExecutorBase) executeDeleteHistoryEventTask(
 		// use task branch token to delete the original branch
 		if !bytes.Equal(task.BranchToken, currentBranchToken) {
 			t.logger.Error(fmt.Sprintf("RRR 7 - %v - %v", task.WorkflowID, task.RunID))
-			return t.deleteHistoryBranch(ctx, task.BranchToken) ///
+			return t.deleteHistoryBranch(ctx, task.BranchToken) /// <------------------
 		}
 		t.logger.Error("Different mutable state versions have the same branch token", tag.TaskVersion(task.Version), tag.LastEventVersion(lastWriteVersion))
 		t.logger.Error(fmt.Sprintf("RRR 8 - %v - %v", task.WorkflowID, task.RunID))
 		return serviceerror.NewInternal("Mutable state has different version but same branch token")
 	}
 
-	t.logger.Info(fmt.Sprintf("RRR 9 - %v - %v", task.WorkflowID, task.RunID))
+	if b, err := mutableState.GetCurrentBranchToken(); err != nil {
+		return err
+	} else {
+		x := hex.EncodeToString(b)
+		y := hex.EncodeToString(task.BranchToken)
+		t.logger.Info(fmt.Sprintf("RRR 9 - %v - %v - %v - %v - %v", task.WorkflowID, task.RunID, x, y, x == y))
+	}
 	return t.deleteManager.DeleteWorkflowExecutionByRetention(
 		ctx,
 		namespace.ID(task.GetNamespaceID()),
 		workflowExecution,
 		weContext,
 		mutableState,
+		/////// task.BranchToken
 	)
 }
 

@@ -242,7 +242,7 @@ func (m *DeleteManagerImpl) deleteWorkflowExecutionInternal(
 ) error {
 
 	m.shard.GetLogger().Info(fmt.Sprintf("PPP - %v - %v", weCtx.GetWorkflowID(), weCtx.GetRunID()))
-	currentBranchToken, err := ms.GetCurrentBranchToken()
+	currentBranchToken, err := ms.GetCurrentBranchToken() //////////////// IS THIS THE BUG???
 	if err != nil {
 		m.shard.GetLogger().Error(fmt.Sprintf("PPP - %v - %v - %v", weCtx.GetWorkflowID(), weCtx.GetRunID(), err))
 		return err
