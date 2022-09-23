@@ -92,7 +92,7 @@ func (t *timerQueueTaskExecutorBase) executeDeleteHistoryEventTask(
 	ctx, cancel := context.WithTimeout(ctx, taskTimeout)
 	defer cancel()
 
-	t.logger.Info(fmt.Sprintf("RRR 0 - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID))
+	t.logger.Info(fmt.Sprintf("RRR 0 - %v - %v", task.WorkflowID, task.RunID))
 
 	workflowExecution := commonpb.WorkflowExecution{
 		WorkflowId: task.GetWorkflowID(),
@@ -106,7 +106,7 @@ func (t *timerQueueTaskExecutorBase) executeDeleteHistoryEventTask(
 		workflow.CallerTypeTask,
 	)
 	if err != nil {
-		t.logger.Error(fmt.Sprintf("RRR 1 - %v - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID, err))
+		t.logger.Error(fmt.Sprintf("RRR 1 - %v - %v - %v", task.WorkflowID, task.RunID, err))
 		return err
 	}
 	defer func() { release(retError) }()
@@ -115,13 +115,13 @@ func (t *timerQueueTaskExecutorBase) executeDeleteHistoryEventTask(
 	switch err.(type) {
 	case nil:
 		if mutableState == nil {
-			t.logger.Error(fmt.Sprintf("RRR 2 - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID))
+			t.logger.Error(fmt.Sprintf("RRR 2 - %v - %v", task.WorkflowID, task.RunID))
 			return nil
 		}
 	case *serviceerror.NotFound:
 		// the mutable state is deleted and delete history branch operation failed.
 		// use task branch token to delete the leftover history branch
-		t.logger.Error(fmt.Sprintf("RRR 3 - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID))
+		t.logger.Error(fmt.Sprintf("RRR 3 - %v - %v", task.WorkflowID, task.RunID))
 		return t.deleteHistoryBranch(ctx, task.BranchToken)
 	default:
 		return err
@@ -131,33 +131,33 @@ func (t *timerQueueTaskExecutorBase) executeDeleteHistoryEventTask(
 		// If workflow is running then just ignore DeleteHistoryEventTask timer task.
 		// This should almost never happen because DeleteHistoryEventTask is created only for closed workflows.
 		// But cross DC replication can resurrect workflow and therefore DeleteHistoryEventTask should be ignored.
-		t.logger.Error(fmt.Sprintf("RRR 4 - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID))
+		t.logger.Error(fmt.Sprintf("RRR 4 - %v - %v", task.WorkflowID, task.RunID))
 		return nil
 	}
 
 	lastWriteVersion, err := mutableState.GetLastWriteVersion()
 	if err != nil {
-		t.logger.Error(fmt.Sprintf("RRR 5 - %v - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID, err))
+		t.logger.Error(fmt.Sprintf("RRR 5 - %v - %v - %v", task.WorkflowID, task.RunID, err))
 		return err
 	}
 	if ok := VerifyTaskVersion(t.shard, t.logger, mutableState.GetNamespaceEntry(), lastWriteVersion, task.Version, task); !ok {
 		currentBranchToken, err := mutableState.GetCurrentBranchToken()
 		if err != nil {
-			t.logger.Error(fmt.Sprintf("RRR 6 - %v - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID, err))
+			t.logger.Error(fmt.Sprintf("RRR 6 - %v - %v - %v", task.WorkflowID, task.RunID, err))
 			return err
 		}
 		// the mutable state has a newer version and the branch token is updated
 		// use task branch token to delete the original branch
 		if !bytes.Equal(task.BranchToken, currentBranchToken) {
-			t.logger.Error(fmt.Sprintf("RRR 7 - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID))
+			t.logger.Error(fmt.Sprintf("RRR 7 - %v - %v", task.WorkflowID, task.RunID))
 			return t.deleteHistoryBranch(ctx, task.BranchToken) ///
 		}
 		t.logger.Error("Different mutable state versions have the same branch token", tag.TaskVersion(task.Version), tag.LastEventVersion(lastWriteVersion))
-		t.logger.Error(fmt.Sprintf("RRR 8 - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID))
+		t.logger.Error(fmt.Sprintf("RRR 8 - %v - %v", task.WorkflowID, task.RunID))
 		return serviceerror.NewInternal("Mutable state has different version but same branch token")
 	}
 
-	t.logger.Info(fmt.Sprintf("RRR 9 - %v - %v - %v", task.NamespaceID, task.WorkflowID, task.RunID))
+	t.logger.Info(fmt.Sprintf("RRR 9 - %v - %v", task.WorkflowID, task.RunID))
 	return t.deleteManager.DeleteWorkflowExecutionByRetention(
 		ctx,
 		namespace.ID(task.GetNamespaceID()),
