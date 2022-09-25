@@ -340,10 +340,10 @@ func (h *HistoryStore) DeleteHistoryBranch(
 ) error {
 	batch := h.Session.NewBatch(gocql.LoggedBatch).WithContext(ctx)
 	batch.Query(v2templateDeleteBranch, request.TreeId, request.BranchId)
+	h.Logger.Info(fmt.Sprintf("DDD - %v - %v - %v", request.TreeId, hex.EncodeToString(request.BranchToken), len(request.BranchRanges)))
 
 	// delete each branch range
 	for _, br := range request.BranchRanges {
-		h.Logger.Info(fmt.Sprintf("DDD - %v - %v", request.TreeId, hex.EncodeToString(request.BranchToken)))
 		h.deleteBranchRangeNodes(batch, request.TreeId, br.BranchId, br.BeginNodeId)
 	}
 
