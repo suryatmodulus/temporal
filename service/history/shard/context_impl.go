@@ -1028,10 +1028,12 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 		s.wLock()
 		defer s.wUnlock()
 
+		s.GetLogger().Info(fmt.Sprintf("DDD e - %v - %v", key.WorkflowID, key.RunID))
 		if err := s.errorByState(); err != nil {
 			return err
 		}
 
+		s.GetLogger().Info(fmt.Sprintf("DDD f - %v - %v", key.WorkflowID, key.RunID))
 		// Step 1. Delete visibility.
 		if deleteVisibilityRecord {
 			// TODO: move to existing task generator logic
@@ -1061,6 +1063,7 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 			}
 		}
 
+		s.GetLogger().Info(fmt.Sprintf("DDD g - %v - %v", key.WorkflowID, key.RunID))
 		// Step 2. Delete current workflow execution pointer.
 		delCurRequest := &persistence.DeleteCurrentWorkflowExecutionRequest{
 			ShardID:     s.shardID,
@@ -1075,6 +1078,7 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 			return err
 		}
 
+		s.GetLogger().Info(fmt.Sprintf("DDD h - %v - %v", key.WorkflowID, key.RunID))
 		// Step 3. Delete workflow mutable state.
 		delRequest := &persistence.DeleteWorkflowExecutionRequest{
 			ShardID:     s.shardID,
@@ -1088,10 +1092,10 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 		return err
 	}
 
-	s.GetLogger().Info(fmt.Sprintf("DDD e - %v - %v", key.WorkflowID, key.RunID))
+	s.GetLogger().Info(fmt.Sprintf("DDD i - %v - %v - %v", key.WorkflowID, key.RunID, err))
 	// Step 4. Delete history branch.
 	if branchToken != nil {
-		s.GetLogger().Info(fmt.Sprintf("DDD f - %v - %v - %v", key.WorkflowID, key.RunID, hex.EncodeToString(branchToken)))
+		s.GetLogger().Info(fmt.Sprintf("DDD j - %v - %v - %v", key.WorkflowID, key.RunID, hex.EncodeToString(branchToken)))
 		delHistoryRequest := &persistence.DeleteHistoryBranchRequest{
 			BranchToken: branchToken,
 			ShardID:     s.shardID,
@@ -1101,7 +1105,7 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 			return err
 		}
 	}
-	s.GetLogger().Info(fmt.Sprintf("DDD g - %v - %v", key.WorkflowID, key.RunID))
+	s.GetLogger().Info(fmt.Sprintf("DDD k - %v - %v", key.WorkflowID, key.RunID))
 	return nil
 }
 
