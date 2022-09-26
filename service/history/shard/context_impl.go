@@ -26,6 +26,7 @@ package shard
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
@@ -987,17 +988,20 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 	// The history branch won't be accessible (because mutable state is deleted) and special garbage collection workflow will delete it eventually.
 	// Step 4 shouldn't be done earlier because if this func fails after it, workflow execution will be accessible but won't have history (inconsistent state).
 
+	s.GetLogger().Info(fmt.Sprintf("DDD a - %v - %v", key.WorkflowID, key.RunID))
 	ctx, cancel, err := s.newDetachedContext(ctx)
 	if err != nil {
 		return err
 	}
 	defer cancel()
 
+	s.GetLogger().Info(fmt.Sprintf("DDD b - %v - %v", key.WorkflowID, key.RunID))
 	engine, err := s.GetEngine(ctx)
 	if err != nil {
 		return err
 	}
 
+	s.GetLogger().Info(fmt.Sprintf("DDD c - %v - %v", key.WorkflowID, key.RunID))
 	// Do not get namespace cache within shard lock.
 	namespaceEntry, err := s.GetNamespaceRegistry().GetNamespaceByID(namespace.ID(key.NamespaceID))
 	deleteVisibilityRecord := true
@@ -1011,6 +1015,7 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 		}
 	}
 
+	s.GetLogger().Info(fmt.Sprintf("DDD d - %v - %v", key.WorkflowID, key.RunID))
 	var newTasks map[tasks.Category][]tasks.Task
 	defer func() {
 		if OperationPossiblySucceeded(retErr) && newTasks != nil {
@@ -1083,17 +1088,20 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 		return err
 	}
 
+	s.GetLogger().Info(fmt.Sprintf("DDD e - %v - %v", key.WorkflowID, key.RunID))
 	// Step 4. Delete history branch.
 	if branchToken != nil {
+		s.GetLogger().Info(fmt.Sprintf("DDD f - %v - %v - %v", key.WorkflowID, key.RunID, hex.EncodeToString(branchToken)))
 		delHistoryRequest := &persistence.DeleteHistoryBranchRequest{
 			BranchToken: branchToken,
 			ShardID:     s.shardID,
 		}
-		err = s.GetExecutionManager().DeleteHistoryBranch(ctx, delHistoryRequest)
+		err = s.GetExecutionManager().DeleteHistoryBranch(ctx, delHistoryRequest) /// DDD
 		if err != nil {
 			return err
 		}
 	}
+	s.GetLogger().Info(fmt.Sprintf("DDD g - %v - %v", key.WorkflowID, key.RunID))
 	return nil
 }
 
