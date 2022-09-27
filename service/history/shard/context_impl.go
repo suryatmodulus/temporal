@@ -26,7 +26,6 @@ package shard
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
@@ -300,10 +299,6 @@ func (s *ContextImpl) updateScheduledTaskMaxReadLevel(cluster string) tasks.Key 
 
 	if _, ok := s.scheduledTaskMaxReadLevelMap[cluster]; !ok {
 		s.scheduledTaskMaxReadLevelMap[cluster] = tasks.DefaultFireTime
-	}
-
-	if s.errorByState() != nil {
-		return tasks.NewKey(s.scheduledTaskMaxReadLevelMap[cluster], 0)
 	}
 
 	currentTime := s.timeSource.Now()
@@ -988,20 +983,17 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 	// The history branch won't be accessible (because mutable state is deleted) and special garbage collection workflow will delete it eventually.
 	// Step 4 shouldn't be done earlier because if this func fails after it, workflow execution will be accessible but won't have history (inconsistent state).
 
-	s.GetLogger().Info(fmt.Sprintf("DDD a - %v - %v", key.WorkflowID, key.RunID))
 	ctx, cancel, err := s.newDetachedContext(ctx)
 	if err != nil {
 		return err
 	}
 	defer cancel()
 
-	s.GetLogger().Info(fmt.Sprintf("DDD b - %v - %v", key.WorkflowID, key.RunID))
 	engine, err := s.GetEngine(ctx)
 	if err != nil {
 		return err
 	}
 
-	s.GetLogger().Info(fmt.Sprintf("DDD c - %v - %v", key.WorkflowID, key.RunID))
 	// Do not get namespace cache within shard lock.
 	namespaceEntry, err := s.GetNamespaceRegistry().GetNamespaceByID(namespace.ID(key.NamespaceID))
 	deleteVisibilityRecord := true
@@ -1015,7 +1007,6 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 		}
 	}
 
-	s.GetLogger().Info(fmt.Sprintf("DDD d - %v - %v", key.WorkflowID, key.RunID))
 	var newTasks map[tasks.Category][]tasks.Task
 	defer func() {
 		if OperationPossiblySucceeded(retErr) && newTasks != nil {
@@ -1028,12 +1019,10 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 		s.wLock()
 		defer s.wUnlock()
 
-		s.GetLogger().Info(fmt.Sprintf("DDD e - %v - %v", key.WorkflowID, key.RunID))
 		if err := s.errorByState(); err != nil {
 			return err
 		}
 
-		s.GetLogger().Info(fmt.Sprintf("DDD f - %v - %v", key.WorkflowID, key.RunID))
 		// Step 1. Delete visibility.
 		if deleteVisibilityRecord {
 			// TODO: move to existing task generator logic
@@ -1063,7 +1052,6 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 			}
 		}
 
-		s.GetLogger().Info(fmt.Sprintf("DDD g - %v - %v", key.WorkflowID, key.RunID))
 		// Step 2. Delete current workflow execution pointer.
 		delCurRequest := &persistence.DeleteCurrentWorkflowExecutionRequest{
 			ShardID:     s.shardID,
@@ -1078,7 +1066,6 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 			return err
 		}
 
-		s.GetLogger().Info(fmt.Sprintf("DDD h - %v - %v", key.WorkflowID, key.RunID))
 		// Step 3. Delete workflow mutable state.
 		delRequest := &persistence.DeleteWorkflowExecutionRequest{
 			ShardID:     s.shardID,
@@ -1092,20 +1079,17 @@ func (s *ContextImpl) DeleteWorkflowExecution(
 		return err
 	}
 
-	s.GetLogger().Info(fmt.Sprintf("DDD i - %v - %v - %v", key.WorkflowID, key.RunID, err))
 	// Step 4. Delete history branch.
 	if branchToken != nil {
-		s.GetLogger().Info(fmt.Sprintf("DDD j - %v - %v - %v", key.WorkflowID, key.RunID, hex.EncodeToString(branchToken)))
 		delHistoryRequest := &persistence.DeleteHistoryBranchRequest{
 			BranchToken: branchToken,
 			ShardID:     s.shardID,
 		}
-		err = s.GetExecutionManager().DeleteHistoryBranch(ctx, delHistoryRequest) /// DDD
+		err = s.GetExecutionManager().DeleteHistoryBranch(ctx, delHistoryRequest)
 		if err != nil {
 			return err
 		}
 	}
-	s.GetLogger().Info(fmt.Sprintf("DDD k - %v - %v", key.WorkflowID, key.RunID))
 	return nil
 }
 
@@ -1628,7 +1612,6 @@ func (s *ContextImpl) transition(request contextRequest) error {
 				s.contextTaggedLogger.Warn("transition to acquired but no engine set")
 				return errInvalidTransition
 			}
-
 			return nil
 		case contextRequestLost:
 			return nil // nothing to do, already acquiring
@@ -1668,35 +1651,6 @@ func (s *ContextImpl) transition(request contextRequest) error {
 		tag.ShardContextStateRequest(fmt.Sprintf("%T", request)),
 	)
 	return errInvalidTransition
-}
-
-// notifyQueueProcessor sends notification to all queue processors for triggering a load
-// NOTE: this method assumes engineFuture is already in a ready state.
-func (s *ContextImpl) notifyQueueProcessor() {
-	// use a cancelled ctx so the method won't be blocked if engineFuture is not ready
-	cancelledCtx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	// we will get the engine when the Future is ready
-	engine, err := s.engineFuture.Get(cancelledCtx)
-	if err != nil {
-		s.contextTaggedLogger.Warn("tried to notify queue processor when engine is not ready")
-		return
-	}
-
-	now := s.timeSource.Now()
-	fakeTasks := make(map[tasks.Category][]tasks.Task)
-	for _, category := range tasks.GetCategories() {
-		fakeTasks[category] = []tasks.Task{tasks.NewFakeTask(definition.WorkflowKey{}, category, now)}
-	}
-
-	// TODO: with multi-cursor, we don't need the for loop
-	for clusterName, info := range s.clusterMetadata.GetAllClusterInfo() {
-		if !info.Enabled {
-			continue
-		}
-		engine.NotifyNewTasks(clusterName, fakeTasks)
-	}
 }
 
 func (s *ContextImpl) loadShardMetadata(ownershipChanged *bool) error {
@@ -1887,17 +1841,11 @@ func (s *ContextImpl) acquireShard() {
 
 		err = s.transition(contextRequestAcquired{engine: engine})
 
-		if err != nil {
-			if engine != nil {
-				// We tried to set the engine but the context was already stopped
-				engine.Stop()
-			}
+		if err != nil && engine != nil {
+			// We tried to set the engine but the context was already stopped
+			engine.Stop()
 			return err
 		}
-
-		// we know engineFuture must be ready here, and we can notify queue processor
-		// to trigger a load as queue max level can be updated to a newer value
-		s.notifyQueueProcessor()
 
 		return nil
 	}

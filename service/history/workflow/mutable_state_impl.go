@@ -439,7 +439,14 @@ func (e *MutableStateImpl) SetHistoryTree(
 			expiry = &hint
 		}
 	}
-	e.logger.Info(fmt.Sprintf("TTT - %v | %v | %v | %v | %v [%v] => %v", e.executionInfo.WorkflowRunExpirationTime, e.executionInfo.WorkflowRunTimeout, e.executionInfo.WorkflowExecutionExpirationTime, e.executionInfo.WorkflowExecutionTimeout, e.namespaceEntry.Retention(), e.namespaceEntry.Name(), expiry))
+	e.logger.Info(fmt.Sprintf("Expiration Hints =>\tNamespace: %v\tRun Timeout: %v\tRun Expiration Time: %v\tExecution Timeout: %v\tExecution Expiration Time:%v\tRetention: %v\tExpiry: %v",
+		e.namespaceEntry.Name(),
+		e.executionInfo.WorkflowRunTimeout,
+		e.executionInfo.WorkflowRunExpirationTime,
+		e.executionInfo.WorkflowExecutionTimeout,
+		e.executionInfo.WorkflowExecutionExpirationTime,
+		e.namespaceEntry.Retention(),
+		expiry))
 
 	initialBranch, err := e.shard.GetExecutionManager().NewHistoryBranch(
 		ctx,

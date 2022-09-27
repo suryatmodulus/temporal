@@ -90,8 +90,7 @@ var (
 		ID:                    historyScannerWFID,
 		TaskQueue:             historyScannerTaskQueueName,
 		WorkflowIDReusePolicy: enumspb.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-		CronSchedule:          "* */12 * * *",
-		//CronSchedule:          "*/1 * * * *",
+		CronSchedule:          "0 */12 * * *",
 	}
 	executionsScannerWFStartOptions = client.StartWorkflowOptions{
 		ID:                    executionsScannerWFID,

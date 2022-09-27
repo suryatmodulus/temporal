@@ -361,7 +361,7 @@ func (r *workflowResetterImpl) persistToDB(
 		HistorySize: resetWorkflow.getContext().GetHistorySize(),
 	}
 
-	if currentWorkflowMutation != nil { ///xxx
+	if currentWorkflowMutation != nil {
 		if currentWorkflowSizeDiff, resetWorkflowSizeDiff, err := r.transaction.UpdateWorkflowExecution(
 			ctx,
 			persistence.UpdateWorkflowModeUpdateCurrent,

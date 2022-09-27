@@ -92,9 +92,7 @@ func (t *timerQueueActiveTaskExecutor) Execute(
 	ctx context.Context,
 	executable queues.Executable,
 ) ([]metrics.Tag, bool, error) {
-	t.logger.Info(fmt.Sprintf("EEE 0"))
 	task := executable.GetTask()
-	t.logger.Info(fmt.Sprintf("EEE 1 - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 	taskType := queues.GetActiveTimerTaskTypeTagValue(task)
 	metricsTags := []metrics.Tag{
 		getNamespaceTagByID(t.shard.GetNamespaceRegistry(), task.GetNamespaceID()),
@@ -105,31 +103,23 @@ func (t *timerQueueActiveTaskExecutor) Execute(
 	var err error
 	switch task := task.(type) {
 	case *tasks.UserTimerTask:
-		t.logger.Info(fmt.Sprintf("EEE a - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 		err = t.executeUserTimerTimeoutTask(ctx, task)
 	case *tasks.ActivityTimeoutTask:
-		t.logger.Info(fmt.Sprintf("EEE b - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 		err = t.executeActivityTimeoutTask(ctx, task)
 	case *tasks.WorkflowTaskTimeoutTask:
-		t.logger.Info(fmt.Sprintf("EEE c - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 		err = t.executeWorkflowTaskTimeoutTask(ctx, task)
 	case *tasks.WorkflowTimeoutTask:
-		t.logger.Info(fmt.Sprintf("EEE d - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 		err = t.executeWorkflowTimeoutTask(ctx, task)
 	case *tasks.ActivityRetryTimerTask:
-		t.logger.Info(fmt.Sprintf("EEE e - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 		err = t.executeActivityRetryTimerTask(ctx, task)
 	case *tasks.WorkflowBackoffTimerTask:
-		t.logger.Info(fmt.Sprintf("EEE f - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 		err = t.executeWorkflowBackoffTimerTask(ctx, task)
 	case *tasks.DeleteHistoryEventTask:
-		t.logger.Info(fmt.Sprintf("EEE g - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID()))
 		err = t.executeDeleteHistoryEventTask(ctx, task)
 	default:
 		err = errUnknownTimerTask
 	}
 
-	t.logger.Info(fmt.Sprintf("EEE 2 - %v - %v - %v - %v", task.GetWorkflowID(), task.GetRunID(), task.GetTaskID(), err))
 	return metricsTags, true, err
 }
 
